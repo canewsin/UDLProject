@@ -1,0 +1,221 @@
+udl_version: 0.0.1
+
+project:
+  name: Test App
+  version: 1.0.0
+  description: "Test UDL Manifest for Sample App"
+  namespace: "com.example.test.app"
+  models_only: true
+  target_platforms:
+    - flutter
+    - web_react
+  authors:
+    - name: "John Developer"
+      email: "john@example.com"
+  license: MIT
+
+defaults:
+  boolean: false
+  EnumWithDescription: SENT #prevails over default mentioned in enums::default value
+
+enums:
+  - id: SimpleEnum
+    variants:
+      - VARIANT1
+      - VARIANT2
+
+  - id: EnumWithDescription
+    description: "Status of an invoice"
+    default: DRAFT
+    variants:
+      - id: DRAFT # C Style enums with index applied by default
+        value: "draft"
+        description: "Invoice not yet sent" #Optional descrtiption for docs gen
+      - id: SENT
+        value: "sent"
+      - id: OVERDUE
+        value: "overdue"
+      - id: CANCELLED
+        value: "cancelled"
+      - id: PAID #Enum Value are allowed to have fields for pattern matching
+        description: "Payment received"
+        value:
+           timestamp: int32 #19200027349492
+           trasaction_id: string #"trans_sldncosnviosndivonoi"
+           customer_id: string #"cust_kkjbisjhdbcisdb"
+
+  - id: InvoiceStatus
+    description: "Status of an invoice"
+    default: NOT_FOUND
+    variants:
+      - id: NOT_FOUND # C Style enums with index applied by default
+        value: "Invoice not found"
+        description: "Invoice not found" #Optional descrtiption for docs gen
+      - id: FORBIDDEN
+        value: "User does not have access to this invoice"
+
+models:
+  - id: LoginRequest # Class/Struct Name to generate
+    description: "User login request" # Optional Description
+    immutable: true # Generates unmodifieble classes/struct. default: true
+    properties:
+      email:
+        type: string
+        format: email
+        description: "User email address"
+      password:
+        type: string
+        length: 8...32
+      remember_me: boolean #default is false for booleans
+
+  - id: User
+    description: "User profile data"
+    immutable: true
+    properties:
+      id:
+        type: string
+        format: uuid
+      email:
+        type: string
+        format: email
+      name:
+        type: string
+        length: 1...100
+      phone:
+        type: string?
+        format: phone
+      company: string?
+      created_at: datetime
+      updated_at: datetime^  # Short Syntax for Required Property equals false
+      login_status: $enum::LoginStatus
+
+  - id: CreateInvoiceRequest
+    properties:
+      clientId: string
+      invoice_number: string
+      issue_date: date
+      due_date: date
+      tag: string^ #Optinal required:false
+      items: array<InvoiceItem>
+      notes:
+        type: string?
+        length: ...500 #only max limit
+      taxable:
+        type: boolean
+        default: true
+      taxRate:
+        type: number
+        length: 0..0..100 #equals to minimum: 0, default: 0, maximum: 100
+        description: "Tax percentage"
+
+  - id: Invoice
+    description: "Complete invoice data"
+    properties:
+      id:
+        type: string
+        format: uuid
+      invoiceNumber: string
+      userId: string
+      clientId: string
+      status:
+        type: $enum::InvoiceStatus
+        default: draft
+      issueDate: date
+      dueDate: date
+      items: array<InvoiceItem>
+      subtotal: number
+      taxAmount: number
+      total: number
+      notes: string?
+      paidAt: datetime?
+      createdAt: datetime
+      updatedAt: datetime
+
+  - id: FetchInvoicesRequest
+    description: "Request to fetch invoices"
+    properties:
+      status: $enum::InvoiceStatus?
+      limit:
+        type: integer
+        length: 1..20..100
+      offset:
+        type: integer
+        length: 0.. #equals to min: 0 default: 0
+      sortBy:
+        type: $enum::SortBy
+        default: createdAt
+      sortOrder:
+        type: $enum::SortOrder
+        default: desc
+
+  - id: ApiError
+    description: "Standard error response"
+    properties:
+      code: string
+      message: string
+      details: object?
+      timestamp: datetime
+
+interface:
+  - id: AuthService
+    description: "Authentication and session management"
+    tags:
+      - authentication
+    methods:
+      - id: login
+        description: "Authenticate user with email and password"
+        params: LoginRequest
+        returns: Result<User, $enum::ApiError>
+        async: true
+
+      - id: logout
+        returns: void
+        async: true
+
+      - id: get_current_user
+        returns: Result<User, $enum::ApiError>
+        async: true
+
+      - id: refreshToken
+        description: "Refresh authentication token"
+        returns: Result<User, $enum::ApiError>
+        async: true
+
+  - id: InvoiceService
+    description: "Invoice management operations"
+    tags:
+      - billing
+    methods:
+      - id: fetch_invoices
+        description: "Fetch invoices with optional filtering"
+        params: FetchInvoicesRequest
+        returns: Result<List<Invoice>, $enum::InvoiceStatus>
+        async: true
+
+      - id: get_invoice
+        description: "Get a specific invoice by ID"
+        params:
+          id: string
+        returns: Result<Invoice, $enum::InvoiceStatus>
+        async: true
+
+      - id: create_invoice
+        description: "Create a new invoice"
+        params: CreateInvoiceRequest
+        returns: Result<Invoice, $enum::InvoiceStatus>
+        async: true
+
+      - id: update_invoice
+        params: Invoice
+        returns: Result<Invoice, $enum::InvoiceStatus>
+        async: true
+
+      - id: delete_invoice
+        params: string
+        returns: void
+        async: true
+
+      - id: mark_as_paid
+        params: string
+        returns: Result<Invoice, $enum::InvoiceStatus>
+        async: true
