@@ -1,10 +1,4 @@
-use std::{
-    collections::HashMap,
-    io::{BufRead, BufReader, Write},
-    os::windows::io::HandleOrInvalid,
-    process::Stdio,
-    sync::LazyLock,
-};
+use std::{collections::HashMap, process::Stdio, sync::LazyLock};
 
 use crate::udl::{
     LangGenerator, UDL,
@@ -38,74 +32,57 @@ impl LangGenerator for RustGenerator {
         }
         code.push_str("enum ");
         code.push_str(&enumm.id);
-        code.push_str(" {\n");
+        code.push_str(" {");
         for variant in &enumm.variants {
             //Handle default value
             match variant {
                 EnumKind::Simple(name) => {
-                    code.push_str(&format!("    {},\n", name));
+                    code.push_str(&format!("{},", name));
                 }
                 EnumKind::Complex(variant) => {
                     if let Some(desc) = variant.description.as_ref() {
-                        code.push_str(&format!("    /// {}\n", desc));
+                        code.push_str(&format!("/// {}\n", desc));
                     }
-                    code.push_str(&format!("    {}", variant.id));
+                    code.push_str(&format!("{}", variant.id));
 
                     match &variant.value {
                         EnumVariantValue::Single(_) => {}
                         EnumVariantValue::Multiple(map) => {
-                            code.push_str(" {\n");
+                            code.push_str(" {");
                             for (key, value) in map {
                                 if MAPPINGS.contains_key(value.as_str()) {
                                     code.push_str(&format!(
-                                        "        {}: {},\n",
+                                        "{}: {},",
                                         key,
                                         MAPPINGS[value.as_str()]
                                     ));
                                 } else {
-                                    code.push_str(&format!("        {}: {},\n", key, value));
+                                    code.push_str(&format!("{}: {},", key, value));
                                 }
                             }
-                            code.push_str("    }");
+                            code.push_str("}");
                         }
                     }
-                    code.push_str(",\n");
+                    code.push_str(",");
                 }
             }
         }
-        code.push_str("}\n");
+        code.push_str("}");
         code
     }
 
-    fn gen_struct(&self, class: &UDL) -> String {
-        format!("struct {} {{", class.project.name)
-    }
-
-    fn generate(&self, udl: &UDL, format: bool) -> String {
+    fn generate(&self, udl: &UDL) -> String {
         let mut code = String::new();
         code.push_str(&self.gen_enum(&udl.enums.iter().skip(1).next().unwrap()));
-        // code.push_str(&self.gen_struct());
-        if format { self.format(&code) } else { code }
+        code
     }
 
-    fn format(&self, code: &str) -> String {
+    fn format(&self, path: &str) {
         //Run rustfmt on the code
-        let mut output = std::process::Command::new("rustfmt")
-            .arg("-")
-            .arg(code)
+        std::process::Command::new("rustfmt")
+            .arg(path)
             .stdout(Stdio::piped())
             .spawn()
             .expect("");
-        // std::io::stdout().write_all(&output.stdout).unwrap();
-        let stdout = output.stdout.take().unwrap();
-        let reader = BufReader::new(stdout);
-
-        for line in reader.lines() {
-            println!("> {}", line.unwrap());
-        }
-
-        let status = output.wait().unwrap();
-        println!("Exit status: {}", status);
-        String::new()
     }
 }
