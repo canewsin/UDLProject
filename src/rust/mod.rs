@@ -12,6 +12,9 @@ pub(crate) struct RustGenerator();
 static MAPPINGS: LazyLock<HashMap<&str, &str>> = std::sync::LazyLock::new(|| {
     HashMap::from([
         ("bool", "bool"),
+        ("int", "i32"),
+        ("float", "f64"),
+        ("string", "String"),
         ("int8", "i8"),
         ("int16", "i16"),
         ("int32", "i32"),
@@ -22,7 +25,6 @@ static MAPPINGS: LazyLock<HashMap<&str, &str>> = std::sync::LazyLock::new(|| {
         ("uint64", "u64"),
         ("float32", "f32"),
         ("float64", "f64"),
-        ("string", "String"),
     ])
 });
 
