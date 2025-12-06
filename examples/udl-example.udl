@@ -7,6 +7,7 @@ project:
   namespace: "com.example.test.app"
   models_only: true
   target_platforms:
+    - rust
     - flutter
     - web_react
   authors:
@@ -15,7 +16,7 @@ project:
   license: MIT
 
 defaults:
-  boolean: false
+  bool: false
   EnumWithDescription: SENT #prevails over default mentioned in enums::default value
 
 enums:
@@ -66,7 +67,7 @@ models:
       password:
         type: string
         length: 8...32
-      remember_me: boolean #default is false for booleans
+      remember_me: bool #default is false for bools
 
   - id: User
     description: "User profile data"
@@ -91,20 +92,21 @@ models:
 
   - id: CreateInvoiceRequest
     properties:
-      clientId: string
+      client_id: string
       invoice_number: string
       issue_date: date
       due_date: date
-      tag: string^ #Optinal required:false
-      items: array<InvoiceItem>
+      tag: string^ #Equals to specifying required:false
+      items: List<InvoiceItem>
       notes:
         type: string?
         length: ...500 #only max limit
+        private: 'true'
       taxable:
-        type: boolean
-        default: true
+        type: bool
+        default: 'true'
       taxRate:
-        type: number
+        type: int8
         length: 0..0..100 #equals to minimum: 0, default: 0, maximum: 100
         description: "Tax percentage"
 
@@ -114,37 +116,37 @@ models:
       id:
         type: string
         format: uuid
-      invoiceNumber: string
-      userId: string
-      clientId: string
+      invoice_number: string
+      user_id: string
+      client_id: string
       status:
         type: $enum::InvoiceStatus
         default: draft
-      issueDate: date
-      dueDate: date
-      items: array<InvoiceItem>
-      subtotal: number
-      taxAmount: number
-      total: number
+      issue_date: date
+      due_date: date
+      items: List<InvoiceItem>
+      subtotal: usize
+      tax_amount: usize
+      total: usize
       notes: string?
-      paidAt: datetime?
-      createdAt: datetime
-      updatedAt: datetime
+      paid_at: datetime?
+      created_at: datetime
+      updated_at: datetime
 
   - id: FetchInvoicesRequest
     description: "Request to fetch invoices"
     properties:
       status: $enum::InvoiceStatus?
       limit:
-        type: integer
+        type: int8
         length: 1..20..100
       offset:
-        type: integer
+        type: int32
         length: 0.. #equals to min: 0 default: 0
-      sortBy:
+      sort_by:
         type: $enum::SortBy
         default: createdAt
-      sortOrder:
+      sort_order:
         type: $enum::SortOrder
         default: desc
 

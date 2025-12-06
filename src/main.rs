@@ -11,7 +11,7 @@ fn main() {
     let file = std::fs::File::open("examples/udl-example.udl").unwrap();
     let str = std::io::read_to_string(file).unwrap();
     let udl: UDL = serde_yaml::from_str(&str).unwrap();
-    // println!("{:#?}", udl);
+    println!("{:#?}", udl);
     let generator = RustGenerator();
     let code = generator.generate(&udl);
 

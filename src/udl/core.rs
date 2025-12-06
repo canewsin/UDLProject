@@ -1,6 +1,6 @@
-use std::collections::HashMap;
-
 use serde::{Deserialize, Serialize};
+
+use crate::udl::{class::Class, enums::Enum};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub(crate) struct UDL {
@@ -8,8 +8,8 @@ pub(crate) struct UDL {
     pub version: String,
     pub project: ProjectMeta,
     pub enums: Vec<Enum>,
+    pub models: Vec<Class>,
 }
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ProjectMeta {
     pub name: String,
@@ -26,32 +26,4 @@ pub struct ProjectMeta {
 pub struct ProjectAuthor {
     name: String,
     email: String,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Enum {
-    pub id: String,
-    pub description: Option<String>,
-    pub variants: Vec<EnumKind>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(untagged)]
-pub enum EnumKind {
-    Simple(String),
-    Complex(EnumVariant),
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct EnumVariant {
-    pub id: String,
-    pub description: Option<String>,
-    pub value: EnumVariantValue,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(untagged)]
-pub enum EnumVariantValue {
-    Single(String),
-    Multiple(HashMap<String, String>),
 }
