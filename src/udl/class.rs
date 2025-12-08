@@ -7,6 +7,7 @@ pub struct Class {
     pub id: String,
     pub description: Option<String>,
     pub immutable: Option<bool>,
+    pub error: Option<String>,
     pub properties: HashMap<String, Property>,
 }
 

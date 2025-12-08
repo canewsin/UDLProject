@@ -1,0 +1,266 @@
+udl_version: 0.0.1
+
+project:
+  name: BillnChill App
+  version: 0.0.1
+  description: "Simplified Billing for Business"
+  namespace: "com.billnchill.app"
+  models_only: true
+  target_platforms:
+    - flutter
+  authors:
+    - name: "Pramukesh"
+      email: "foss@pramukesh.com"
+  license: MIT
+
+enums:
+  - id: LoginError
+    type: "constructor_error"
+    variants:
+      - id: K_INVALID_EMAIL
+        value: "Invalid email address"
+        description: "Invalid email address"
+        target: "format:email"
+      - id: K_INVALID_PASSWORD_MIN
+        value: "Invalid password minimum length"
+        target: "length:min"
+        description: "Password is too short"
+      - id: K_INVALID_PASSWORD_MAX
+        value: "Invalid password maximum length"
+        target: "length:max"
+        description: "Password is too long"
+
+  - id: UserNameError
+    type: "constructor_error"
+    variants:
+      - id: K_INVALID_USER_NAME_MIN
+        value: "Invalid username minimum length"
+        target: "length:min"
+        description: "Username is too short"
+      - id: K_INVALID_USER_NAME_MAX
+        value: "Invalid username maximum length"
+        target: "length:max"
+        description: "Username is too long"
+
+  - id: LoginStatus
+    variants:
+      - K_LOGGED_IN
+      - K_LOGGED_OUT
+
+  - id: SortOrder
+    variants:
+      - K_ASC
+      - K_DESC
+
+  - id: SortBy
+    variants:
+      - K_ID
+      - K_NAME
+      - K_CREATED_AT
+
+  - id: PaymentStatus
+    description: "Status of an invoice"
+    default: K_DRAFT
+    variants:
+      - id: K_DRAFT
+        value: "draft"
+        description: "Invoice not yet sent"
+      - id: K_SENT
+        value: "sent"
+      - id: K_OVERDUE
+        value: "overdue"
+      - id: K_CANCELLED
+        value: "cancelled"
+      - id: K_PAID
+        value: "paid"
+
+  - id: InvoiceStatus
+    description: "Status of an invoice"
+    default: K_NOT_FOUND
+    variants:
+      - id: K_NOT_FOUND
+        value: "Invoice not found"
+        description: "Invoice not found"
+      - id: K_FORBIDDEN
+        value: "User does not have access to this invoice"
+
+models:
+  - id: LoginRequest
+    description: "User login request"
+    error: LoginError
+    properties:
+      email:
+        type: string
+        format: email
+        description: "User email address"
+      password:
+        type: string
+        length: 8...32
+      remember_me: bool
+
+  - id: User
+    error: UserNameError
+    description: "User profile data"
+    properties:
+      id:
+        type: string
+        format: uuid
+      email:
+        type: string
+        format: email
+      name:
+        type: string
+        length: 6...100
+      phone:
+        type: string?
+        format: phone
+      company: string?
+      created_at: datetime
+      updated_at: datetime^
+      login_status: $enum::LoginStatus
+
+  - id: CreateInvoiceRequest
+    properties:
+      client_id: string
+      invoice_number: string
+      issue_date: date
+      due_date: date
+      tag: string^
+      items: List<InvoiceItem>
+      notes:
+        type: string?
+        length: ...500
+        private: "true"
+      taxable:
+        type: bool
+        default: "true"
+      tax_rate:
+        type: int8
+        length: 0..0..100
+        description: "Tax percentage"
+
+  - id: Invoice
+    description: "Complete invoice data"
+    properties:
+      id:
+        type: string
+        format: uuid
+      invoice_number: string
+      user_id: string
+      client_id: string
+      status:
+        type: $enum::InvoiceStatus
+        default: draft
+      issue_date: date
+      due_date: date
+      items: List<InvoiceItem>
+      subtotal: usize
+      tax_amount: usize
+      total: usize
+      notes: string?
+      paid_at: datetime?
+      created_at: datetime
+      updated_at: datetime
+
+  - id: InvoiceItem
+    description: "Invoice item data"
+    properties:
+      id:
+        type: string
+        format: uuid
+      invoice_id: string
+      product_id: string
+      quantity: int
+      price: int
+      tax_rate: int8
+      tax_amount: int
+      total: int
+
+  - id: FetchInvoicesRequest
+    description: "Request to fetch invoices"
+    properties:
+      status: $enum::InvoiceStatus?
+      limit:
+        type: int8
+        length: 1..20..100
+      offset:
+        type: int
+        length: 0..
+      sort_by:
+        type: $enum::SortBy
+        default: createdAt
+      sort_order:
+        type: $enum::SortOrder
+        default: desc
+
+  - id: ApiError
+    description: "Standard error response"
+    properties:
+      code: string
+      message: string
+      details: object?
+      timestamp: datetime
+
+# interface:
+#   - id: AuthService
+#     description: "Authentication and session management"
+#     tags:
+#       - authentication
+#     methods:
+#       - id: login
+#         description: "Authenticate user with email and password"
+#         params: LoginRequest
+#         returns: Result<User, $enum::ApiError>
+#         async: true
+
+#       - id: logout
+#         returns: void
+#         async: true
+
+#       - id: get_current_user
+#         returns: Result<User, $enum::ApiError>
+#         async: true
+
+#       - id: refreshToken
+#         description: "Refresh authentication token"
+#         returns: Result<User, $enum::ApiError>
+#         async: true
+
+#   - id: InvoiceService
+#     description: "Invoice management operations"
+#     tags:
+#       - billing
+#     methods:
+#       - id: fetch_invoices
+#         description: "Fetch invoices with optional filtering"
+#         params: FetchInvoicesRequest
+#         returns: Result<List<Invoice>, $enum::InvoiceStatus>
+#         async: true
+
+#       - id: get_invoice
+#         description: "Get a specific invoice by ID"
+#         params:
+#           id: string
+#         returns: Result<Invoice, $enum::InvoiceStatus>
+#         async: true
+
+#       - id: create_invoice
+#         description: "Create a new invoice"
+#         params: CreateInvoiceRequest
+#         returns: Result<Invoice, $enum::InvoiceStatus>
+#         async: true
+
+#       - id: update_invoice
+#         params: Invoice
+#         returns: Result<Invoice, $enum::InvoiceStatus>
+#         async: true
+
+#       - id: delete_invoice
+#         params: string
+#         returns: void
+#         async: true
+
+#       - id: mark_as_paid
+#         params: string
+#         returns: Result<Invoice, $enum::InvoiceStatus>
+#         async: true

@@ -1,4 +1,8 @@
-use std::{collections::HashMap, process::Stdio, sync::LazyLock};
+use std::{
+    collections::{HashMap, HashSet},
+    process::Stdio,
+    sync::LazyLock,
+};
 
 use crate::udl::{
     LangGenerator, UDL,
@@ -15,10 +19,12 @@ static MAPPINGS: LazyLock<HashMap<&str, &str>> = std::sync::LazyLock::new(|| {
         ("int", "i32"),
         ("float", "f64"),
         ("string", "String"),
+        ("isize", "isize"),
         ("int8", "i8"),
         ("int16", "i16"),
         ("int32", "i32"),
         ("int64", "i64"),
+        ("usize", "usize"),
         ("uint8", "u8"),
         ("uint16", "u16"),
         ("uint32", "u32"),
@@ -50,6 +56,10 @@ fn process_type(type_name: &str) -> String {
 }
 
 impl LangGenerator for RustGenerator {
+    fn extension(&self) -> &str {
+        "rs"
+    }
+
     fn gen_enum(&self, enumm: &Enum) -> String {
         let mut code = String::new();
         if let Some(desc) = enumm.description.as_ref() {
@@ -96,7 +106,7 @@ impl LangGenerator for RustGenerator {
         code
     }
 
-    fn gen_class(&self, class: &Class) -> String {
+    fn gen_class(&self, class: &Class, _error_enum: Option<&Enum>) -> (String, HashSet<String>) {
         let mut code = String::new();
         if let Some(desc) = &class.description {
             code.push_str(&format!("/// {}\n", desc));
@@ -123,7 +133,7 @@ impl LangGenerator for RustGenerator {
             }
         }
         code.push_str(&format!("}}\n"));
-        code
+        (code, HashSet::new())
     }
 
     fn generate(&self, udl: &UDL) -> String {
@@ -134,7 +144,12 @@ impl LangGenerator for RustGenerator {
         }
 
         for class in &udl.models {
-            code.push_str(&self.gen_class(class));
+            let error_enum = udl
+                .enums
+                .iter()
+                .find(|e| e.id == class.clone().error.unwrap_or_default());
+
+            code.push_str(&self.gen_class(class, error_enum).0);
             code.push_str("\n\n");
         }
 
