@@ -15,5 +15,18 @@ pub struct Class {
 #[serde(untagged)]
 pub enum Property {
     Type(String),
-    Map(HashMap<String, String>),
+    Map(HashMap<PropertyKey, String>),
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Hash, PartialEq, Eq)]
+#[serde(rename_all = "lowercase")]
+pub enum PropertyKey {
+    Description,
+    Type,
+    Format,
+    Length,
+    Min,
+    Max,
+    Private,
+    Default,
 }

@@ -6,7 +6,7 @@ use std::{
 
 use crate::udl::{
     LangGenerator, UDL,
-    class::{Class, Property},
+    class::{Class, Property, PropertyKey},
     enums::{Enum, EnumKind, EnumVariantValue},
     utils::is_nullable_type,
 };
@@ -119,15 +119,15 @@ impl LangGenerator for RustGenerator {
                     code.push_str(&format!("    pub {}: {},", name, process_type(ty)));
                 }
                 Property::Map(map) => {
-                    if let Some(desc) = &map.get("description") {
+                    if let Some(desc) = &map.get(&PropertyKey::Description) {
                         code.push_str(&format!("/// {}\n", desc));
                     }
-                    let private = map.get("private") == Some(&String::from("true"));
+                    let private = map.get(&PropertyKey::Private) == Some(&String::from("true"));
                     code.push_str(&format!(
                         "    {} {}: {},",
                         if private { "" } else { "pub" },
                         name,
-                        process_type(&map["type"])
+                        process_type(&map[&PropertyKey::Type])
                     ));
                 }
             }

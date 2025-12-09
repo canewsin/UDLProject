@@ -46,17 +46,17 @@ pub fn parse_length_validator(value: &str) -> (isize, isize, isize) {
 pub fn extract_enum_variant<'a>(
     enumm: &'a Enum,
     filter: &str,
-) -> Vec<(&'a String, &'a String, &'a String)> {
+) -> Vec<(&'a String, &'a String, &'a Option<String>)> {
     let a = enumm.variants.iter().filter_map(|a| {
         if let EnumKind::Complex(EnumVariant {
             target: Some(str),
-            target_field: Some(field),
+            target_field,
             id,
             ..
         }) = a
         {
             if str == filter {
-                Some((id, str, field))
+                Some((id, str, target_field))
             } else {
                 None
             }

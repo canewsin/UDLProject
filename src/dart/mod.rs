@@ -8,7 +8,7 @@ use convert_case::ccase;
 
 use crate::udl::{
     LangGenerator, UDL,
-    class::{Class, Property},
+    class::{Class, Property, PropertyKey},
     enums::{Enum, EnumKind, EnumVariantValue},
     utils::{extract_enum_variant, is_nullable_type, parse_length_validator},
 };
@@ -39,7 +39,13 @@ static MAPPINGS: LazyLock<HashMap<&str, &str>> = std::sync::LazyLock::new(|| {
     ])
 });
 
-const VALIDATORS: [&str; 5] = ["length", "format", "default", "min", "max"];
+const VALIDATORS: [PropertyKey; 5] = [
+    PropertyKey::Length,
+    PropertyKey::Format,
+    PropertyKey::Default,
+    PropertyKey::Min,
+    PropertyKey::Max,
+];
 
 fn clean_type_name(type_name: &str) -> String {
     type_name
@@ -143,13 +149,13 @@ impl LangGenerator for DartGenerator {
                     type_str = process_type(ty);
                 }
                 Property::Map(map) => {
-                    if let Some(desc) = &map.get("description") {
+                    if let Some(desc) = &map.get(&PropertyKey::Description) {
                         code.push_str(&format!("/// {}\n", desc));
                     }
-                    private = map.get("private") == Some(&String::from("true"));
-                    need_priv_constructor = map.keys().any(|k| VALIDATORS.contains(&k.as_str()))
-                        && class.error.is_some();
-                    let ty = process_type(&map["type"]);
+                    private = map.get(&PropertyKey::Private) == Some(&String::from("true"));
+                    need_priv_constructor =
+                        map.keys().any(|k| VALIDATORS.contains(&k)) && class.error.is_some();
+                    let ty = process_type(&map[&PropertyKey::Type]);
                     type_str = ty.clone();
                     code.push_str(&format!(
                         "final {} {}{};",
@@ -221,29 +227,32 @@ impl LangGenerator for DartGenerator {
             for (name, prop) in &class.properties {
                 if let Property::Map(map) = prop {
                     for (key, value) in map {
-                        if key == "default" {
+                        if key == &PropertyKey::Default {
                             continue;
                         }
-                        if VALIDATORS.contains(&key.as_str()) {
-                            if key == "email" || key == "default" {
+                        if VALIDATORS.contains(&key) {
+                            if key == &PropertyKey::Default {
                                 #[cfg(debug_assertions)]
                                 code.push_str(&format!(
-                                    "// {} Validator found for {}\n",
+                                    "// {:?} Validator found for {}\n",
                                     key, name
                                 ));
                                 continue;
                             }
                             #[cfg(debug_assertions)]
-                            code.push_str(&format!("// {} Validator found for {}\n", key, name));
-                            let (min, max, _) = if key == "length" {
+                            code.push_str(&format!("// {:?} Validator found for {}\n", key, name));
+                            let (min, max, _) = if key == &PropertyKey::Length {
                                 parse_length_validator(value)
-                            } else if key == "min" {
+                            } else if key == &PropertyKey::Min {
                                 (value.parse().unwrap(), -1, -1)
-                            } else if key == "max" {
+                            } else if key == &PropertyKey::Max {
                                 (0, value.parse().unwrap(), -1)
                             } else {
                                 (-1, -1, -1)
                             };
+                            if (min, max) == (-1, -1) {
+                                continue;
+                            }
                             if min != -1 {
                                 let variant =
                                     extract_enum_variant(error_enum.unwrap(), "length:min");
@@ -254,7 +263,9 @@ impl LangGenerator for DartGenerator {
                                     variant
                                         .iter()
                                         .filter_map(|(id, str, field)| {
-                                            if *field == name {
+                                            if let Some(name_) = field
+                                                && name_ == name
+                                            {
                                                 Some((id, str))
                                             } else {
                                                 None
@@ -283,7 +294,9 @@ impl LangGenerator for DartGenerator {
                                     variant
                                         .iter()
                                         .filter_map(|(id, str, field)| {
-                                            if *field == name {
+                                            if let Some(name_) = field
+                                                && name_ == name
+                                            {
                                                 Some((id, str))
                                             } else {
                                                 None
