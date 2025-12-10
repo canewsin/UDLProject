@@ -24,7 +24,7 @@ pub enum PropertyKey {
     Description,
     Type,
     Format,
-    Length,
+    Limit,
     Min,
     Max,
     Private,

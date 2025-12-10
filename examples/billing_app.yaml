@@ -23,11 +23,11 @@ enums:
         target: "format:email"
       - id: K_INVALID_PASSWORD_MIN
         value: "Invalid password minimum length"
-        target: "length:min"
+        target: "limit:min"
         description: "Password is too short"
       - id: K_INVALID_PASSWORD_MAX
         value: "Invalid password maximum length"
-        target: "length:max"
+        target: "limit:max"
         description: "Password is too long"
 
   - id: UserNameError
@@ -35,11 +35,11 @@ enums:
     variants:
       - id: K_INVALID_USER_NAME_MIN
         value: "Invalid username minimum length"
-        target: "length:min"
+        target: "limit:min"
         description: "Username is too short"
       - id: K_INVALID_USER_NAME_MAX
         value: "Invalid username maximum length"
-        target: "length:max"
+        target: "limit:max"
         description: "Username is too long"
 
   - id: CreateInvoiceRequestError
@@ -47,17 +47,17 @@ enums:
     variants:
       - id: K_INVALID_NOTES_MAX
         value: "Invalid notes maximum length"
-        target: "length:max"
+        target: "limit:max"
         target_field: "notes"
         description: "Notes are too long"
       - id: K_INVALID_TAX_RATE_MIN
         value: "Invalid tax rate minimum value"
-        target: "length:min"
+        target: "limit:min"
         target_field: "tax_rate"
         description: "Tax rate is too low"
       - id: K_INVALID_TAX_RATE_MAX
         value: "Invalid tax rate maximum value"
-        target: "length:max"
+        target: "limit:max"
         target_field: "tax_rate"
         description: "Tax rate is too high"
 
@@ -114,7 +114,7 @@ models:
         description: "User email address"
       password:
         type: string
-        length: 8...32
+        limit: 8...32
       remember_me: bool
 
   - id: User
@@ -129,7 +129,7 @@ models:
         format: email
       name:
         type: string
-        length: 6...100
+        limit: 6...100
       phone:
         type: string?
         format: phone
@@ -149,14 +149,14 @@ models:
       items: List<InvoiceItem>
       notes:
         type: string?
-        length: ...500
+        limit: ...500
         private: "true"
       taxable:
         type: bool
         default: "true"
       tax_rate:
         type: int8
-        length: 0..0..100
+        limit: 0..0..100
         description: "Tax percentage"
 
   - id: Invoice
@@ -202,10 +202,10 @@ models:
       status: $enum::InvoiceStatus?
       limit:
         type: int8
-        length: 1..20..100
+        limit: 1..20..100
       offset:
         type: int
-        length: 0..
+        limit: 0..
       sort_by:
         type: $enum::SortBy
         default: createdAt

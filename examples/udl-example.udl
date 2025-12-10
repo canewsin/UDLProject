@@ -66,7 +66,7 @@ models:
         description: "User email address"
       password:
         type: string
-        length: 8...32
+        limit: 8...32
       remember_me: bool #default is false for bools
 
   - id: User
@@ -81,7 +81,7 @@ models:
         format: email
       name:
         type: string
-        length: 1...100
+        limit: 1...100
       phone:
         type: string?
         format: phone
@@ -100,14 +100,14 @@ models:
       items: List<InvoiceItem>
       notes:
         type: string?
-        length: ...500 #only max limit
+        limit: ...500 #only max limit
         private: 'true'
       taxable:
         type: bool
         default: 'true'
       taxRate:
         type: int8
-        length: 0..0..100 #equals to minimum: 0, default: 0, maximum: 100
+        limit: 0..0..100 #equals to minimum: 0, default: 0, maximum: 100
         description: "Tax percentage"
 
   - id: Invoice
@@ -139,10 +139,10 @@ models:
       status: $enum::InvoiceStatus?
       limit:
         type: int8
-        length: 1..20..100
+        limit: 1..20..100
       offset:
         type: int
-        length: 0.. #equals to min: 0 default: 0
+        limit: 0.. #equals to min: 0 default: 0
       sort_by:
         type: $enum::SortBy
         default: createdAt

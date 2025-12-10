@@ -10,7 +10,7 @@ use crate::udl::{
     LangGenerator, UDL,
     class::{Class, Property, PropertyKey},
     enums::{Enum, EnumKind, EnumVariantValue},
-    utils::{extract_enum_variant, is_nullable_type, parse_length_validator},
+    utils::{extract_enum_variant, is_nullable_type, parse_limit_validator},
 };
 
 pub(crate) struct DartGenerator();
@@ -42,7 +42,7 @@ static MAPPINGS: LazyLock<HashMap<&str, &str>> = std::sync::LazyLock::new(|| {
 static NUMBER_TYPES: LazyLock<Vec<&str>> = std::sync::LazyLock::new(|| vec!["int", "double"]);
 
 const VALIDATORS: [PropertyKey; 5] = [
-    PropertyKey::Length,
+    PropertyKey::Limit,
     PropertyKey::Format,
     PropertyKey::Default,
     PropertyKey::Min,
@@ -246,8 +246,8 @@ impl LangGenerator for DartGenerator {
                                     key, name
                                 ));
                             }
-                            let (min, max, def) = if key == &PropertyKey::Length {
-                                parse_length_validator(value)
+                            let (min, max, def) = if key == &PropertyKey::Limit {
+                                parse_limit_validator(value)
                             } else if key == &PropertyKey::Min {
                                 (value.parse().unwrap(), -1, -1)
                             } else if key == &PropertyKey::Max {
@@ -267,11 +267,11 @@ impl LangGenerator for DartGenerator {
                                 let (filter_name, operator, value) = if !completed.0 && min != -1 {
                                     completed.0 = true;
                                     is_min_variant = true;
-                                    ("length:min", "<", min)
+                                    ("limit:min", "<", min)
                                 } else {
                                     is_min_variant = false;
                                     completed.1 = true;
-                                    ("length:max", ">", max)
+                                    ("limit:max", ">", max)
                                 };
                                 let variant =
                                     extract_enum_variant(error_enum.unwrap(), filter_name);

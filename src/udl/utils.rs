@@ -12,7 +12,7 @@ pub fn is_nullable_type(type_name: &str) -> bool {
 //     type_name.starts_with("$enum::")
 // }
 
-pub fn parse_length_validator(value: &str) -> (isize, isize, isize) {
+pub fn parse_limit_validator(value: &str) -> (isize, isize, isize) {
     if value.contains("...") {
         let parts: Vec<&str> = value.split("...").collect();
         let min = parts[0].parse().unwrap_or(-1);
@@ -33,7 +33,7 @@ pub fn parse_length_validator(value: &str) -> (isize, isize, isize) {
                 let default = min;
                 (min, -1, default)
             } else {
-                panic!("Invalid length validator format");
+                panic!("Invalid limit validator format");
             };
         }
         let min = parts[0].parse().unwrap_or(0);
@@ -72,12 +72,12 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_parse_length_validator() {
-        assert_eq!(parse_length_validator("1...10"), (1, 10, -1));
-        assert_eq!(parse_length_validator("...10"), (-1, 10, -1));
-        assert_eq!(parse_length_validator("10..."), (10, -1, -1));
-        assert_eq!(parse_length_validator("1..10..5"), (1, 5, 10));
-        assert_eq!(parse_length_validator("1.."), (1, -1, 1));
-        assert_eq!(parse_length_validator("..10"), (-1, 10, 10));
+    fn test_parse_limit_validator() {
+        assert_eq!(parse_limit_validator("1...10"), (1, 10, -1));
+        assert_eq!(parse_limit_validator("...10"), (-1, 10, -1));
+        assert_eq!(parse_limit_validator("10..."), (10, -1, -1));
+        assert_eq!(parse_limit_validator("1..10..5"), (1, 5, 10));
+        assert_eq!(parse_limit_validator("1.."), (1, -1, 1));
+        assert_eq!(parse_limit_validator("..10"), (-1, 10, 10));
     }
 }
