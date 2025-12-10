@@ -39,6 +39,8 @@ static MAPPINGS: LazyLock<HashMap<&str, &str>> = std::sync::LazyLock::new(|| {
     ])
 });
 
+static NUMBER_TYPES: LazyLock<Vec<&str>> = std::sync::LazyLock::new(|| vec!["int", "double"]);
+
 const VALIDATORS: [PropertyKey; 5] = [
     PropertyKey::Length,
     PropertyKey::Format,
@@ -54,17 +56,14 @@ fn clean_type_name(type_name: &str) -> String {
         .replace("$enum::", "")
 }
 
-fn process_type(type_name: &str) -> String {
+fn process_type(type_name: &str) -> (String, String) {
     let is_nullable = is_nullable_type(type_name);
     let name = clean_type_name(type_name);
     let mapped_type = MAPPINGS.get(name.as_str());
-    let prefix = if is_nullable { "" } else { "" };
     let suffix = if is_nullable { "?" } else { "" };
-    format!(
-        "{}{}{}",
-        prefix,
-        mapped_type.unwrap_or(&name.as_str()),
-        suffix
+    (
+        format!("{}", mapped_type.unwrap_or(&name.as_str())),
+        suffix.into(),
     )
 }
 
@@ -130,41 +129,42 @@ impl LangGenerator for DartGenerator {
             code.push_str(&format!("/// {}\n", desc));
         }
         code.push_str(&format!("class {} {{", class.id));
-        // code.push_str("\n");
         let mut need_priv_constructor = false;
         let mut props = HashMap::new();
         let mut pub_props = HashMap::new();
         let mut priv_props = HashMap::new();
+        let mut props_meta = HashMap::<String, (String, bool, bool)>::new();
         for (name, ty) in &class.properties {
             let mut private = false;
             #[allow(unused)]
             let mut type_str = String::new();
             match ty {
                 Property::Type(ty) => {
-                    code.push_str(&format!(
-                        "final {} {};",
-                        process_type(ty),
-                        ccase!(camel, name)
-                    ));
-                    type_str = process_type(ty);
+                    let (type_, suffix) = process_type(ty);
+                    let name = ccase!(camel, name);
+                    code.push_str(&format!("final {}{} {};", type_, suffix, name));
+                    type_str = format!("{}{}", type_, suffix);
+                    props_meta.insert(name, (type_, !suffix.is_empty(), false));
                 }
                 Property::Map(map) => {
+                    let name = ccase!(camel, name);
                     if let Some(desc) = &map.get(&PropertyKey::Description) {
                         code.push_str(&format!("/// {}\n", desc));
                     }
                     private = map.get(&PropertyKey::Private) == Some(&String::from("true"));
                     need_priv_constructor =
                         map.keys().any(|k| VALIDATORS.contains(&k)) && class.error.is_some();
-                    let ty = process_type(&map[&PropertyKey::Type]);
-                    type_str = ty.clone();
+                    let (ty, suffix) = process_type(&map[&PropertyKey::Type]);
+                    type_str = format!("{}{}", ty, suffix);
+                    props_meta.insert(name.clone(), (ty, !suffix.is_empty(), private));
                     code.push_str(&format!(
                         "final {} {}{};",
                         type_str,
                         if private { "_" } else { "" },
-                        ccase!(camel, name)
+                        name
                     ));
                     if private {
-                        priv_props.insert(name.clone(), type_str.clone());
+                        priv_props.insert(name, type_str.clone());
                     }
                 }
             }
@@ -182,7 +182,6 @@ impl LangGenerator for DartGenerator {
         code.push_str("\n\n");
         let priv_props_list = priv_props
             .keys()
-            // .into_iter()
             .map(|name| format!("_{} = {}", name, name))
             .collect::<Vec<String>>();
         let suffix = if priv_props_list.is_empty() {
@@ -204,7 +203,6 @@ impl LangGenerator for DartGenerator {
         ));
 
         code.push_str("\n\n");
-        // code.push_str(&format!(";\n"));
 
         if need_priv_constructor {
             if error_enum.is_none() {
@@ -233,15 +231,22 @@ impl LangGenerator for DartGenerator {
                         if VALIDATORS.contains(&key) {
                             if key == &PropertyKey::Default {
                                 #[cfg(debug_assertions)]
+                                {
+                                    code.push_str(&format!(
+                                        "// {:?} Validator found for {}\n",
+                                        key, name
+                                    ));
+                                }
+                                continue;
+                            }
+                            #[cfg(debug_assertions)]
+                            {
                                 code.push_str(&format!(
                                     "// {:?} Validator found for {}\n",
                                     key, name
                                 ));
-                                continue;
                             }
-                            #[cfg(debug_assertions)]
-                            code.push_str(&format!("// {:?} Validator found for {}\n", key, name));
-                            let (min, max, _) = if key == &PropertyKey::Length {
+                            let (min, max, def) = if key == &PropertyKey::Length {
                                 parse_length_validator(value)
                             } else if key == &PropertyKey::Min {
                                 (value.parse().unwrap(), -1, -1)
@@ -250,43 +255,26 @@ impl LangGenerator for DartGenerator {
                             } else {
                                 (-1, -1, -1)
                             };
-                            if (min, max) == (-1, -1) {
+                            if (min, max, def) == (-1, -1, -1) {
                                 continue;
                             }
-                            if min != -1 {
-                                let variant =
-                                    extract_enum_variant(error_enum.unwrap(), "length:min");
-                                let variant = if variant.len() == 1 {
-                                    let v = variant.get(0).unwrap();
-                                    Some((&v.0, &v.1))
-                                } else {
-                                    variant
-                                        .iter()
-                                        .filter_map(|(id, str, field)| {
-                                            if let Some(name_) = field
-                                                && name_ == name
-                                            {
-                                                Some((id, str))
-                                            } else {
-                                                None
-                                            }
-                                        })
-                                        .next()
-                                };
-                                if let Some((variant, _)) = variant {
-                                    code.push_str(&format!("if ({}.length < {}) {{\n", name, min));
-                                    code.push_str(&format!(
-                                        "    return Failure({}.{});\n",
-                                        err_enum_name,
-                                        ccase!(camel, variant)
-                                    ));
-                                    code.push_str("}\n");
+                            let mut completed = (min == -1, max == -1);
+                            loop {
+                                if completed == (true, true) {
+                                    break;
                                 }
-                            }
-                            if max != -1 {
+                                let is_min_variant;
+                                let (filter_name, operator, value) = if !completed.0 && min != -1 {
+                                    completed.0 = true;
+                                    is_min_variant = true;
+                                    ("length:min", "<", min)
+                                } else {
+                                    is_min_variant = false;
+                                    completed.1 = true;
+                                    ("length:max", ">", max)
+                                };
                                 let variant =
-                                    extract_enum_variant(error_enum.unwrap(), "length:max");
-
+                                    extract_enum_variant(error_enum.unwrap(), filter_name);
                                 let variant = if variant.len() == 1 {
                                     let v = variant.get(0).unwrap();
                                     Some((&v.0, &v.1))
@@ -304,8 +292,27 @@ impl LangGenerator for DartGenerator {
                                         })
                                         .next()
                                 };
+                                let prop_suffix = {
+                                    let name_str = ccase!(camel, name);
+                                    let (type_, nullable, _) = props_meta.get(&name_str).unwrap();
+                                    let is_number = NUMBER_TYPES.contains(&type_.as_str());
+                                    let name = ccase!(camel, name);
+                                    if is_number {
+                                        name
+                                    } else {
+                                        if *nullable {
+                                            let suffix = if is_min_variant { min } else { max };
+                                            format!("({}?.length ?? {})", name, suffix)
+                                        } else {
+                                            format!("{}.length", name)
+                                        }
+                                    }
+                                };
                                 if let Some((variant, _)) = variant {
-                                    code.push_str(&format!("if ({}.length > {}) {{\n", name, max));
+                                    code.push_str(&format!(
+                                        "if ({} {} {}) {{\n",
+                                        prop_suffix, operator, value
+                                    ));
                                     code.push_str(&format!(
                                         "    return Failure({}.{});\n",
                                         err_enum_name,

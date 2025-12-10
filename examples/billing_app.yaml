@@ -42,6 +42,25 @@ enums:
         target: "length:max"
         description: "Username is too long"
 
+  - id: CreateInvoiceRequestError
+    type: "constructor_error"
+    variants:
+      - id: K_INVALID_NOTES_MAX
+        value: "Invalid notes maximum length"
+        target: "length:max"
+        target_field: "notes"
+        description: "Notes are too long"
+      - id: K_INVALID_TAX_RATE_MIN
+        value: "Invalid tax rate minimum value"
+        target: "length:min"
+        target_field: "tax_rate"
+        description: "Tax rate is too low"
+      - id: K_INVALID_TAX_RATE_MAX
+        value: "Invalid tax rate maximum value"
+        target: "length:max"
+        target_field: "tax_rate"
+        description: "Tax rate is too high"
+
   - id: LoginStatus
     variants:
       - K_LOGGED_IN
@@ -120,6 +139,7 @@ models:
       login_status: $enum::LoginStatus
 
   - id: CreateInvoiceRequest
+    error: CreateInvoiceRequestError
     properties:
       client_id: string
       invoice_number: string
