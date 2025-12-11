@@ -1,8 +1,8 @@
+use crate::udl::enums::{Enum, EnumKind, EnumVariant};
+
 // pub fn is_optional_type(type_name: &str) -> bool {
 //     type_name.contains("^")
 // }
-
-use crate::udl::enums::{Enum, EnumKind, EnumVariant};
 
 pub fn is_nullable_type(type_name: &str) -> bool {
     type_name.contains("?")
@@ -47,29 +47,35 @@ pub fn extract_enum_variant<'a>(
     enumm: &'a Enum,
     filter: &str,
 ) -> Vec<(&'a String, &'a String, &'a Option<String>)> {
-    let a = enumm.variants.iter().filter_map(|a| {
+    let f = enumm.variants.iter().filter_map(|v| {
         if let EnumKind::Complex(EnumVariant {
             target: Some(str),
             target_field,
             id,
             ..
-        }) = a
+        }) = v
         {
             if str == filter {
-                Some((id, str, target_field))
-            } else {
-                None
+                return Some((id, str, target_field));
             }
-        } else {
-            None
-        }
+            return None;
+        };
+        None
     });
-    a.into_iter().collect::<Vec<_>>()
+    f.into_iter().collect::<Vec<_>>()
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_is_nullable() {
+        assert!(is_nullable_type("String?"));
+        assert!(!is_nullable_type("String"));
+        assert!(is_nullable_type("int?^"));
+        assert!(!is_nullable_type("bool^"));
+    }
 
     #[test]
     fn test_parse_limit_validator() {
