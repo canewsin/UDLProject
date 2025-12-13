@@ -5,9 +5,9 @@
 The Unified Design Language (UDL) project aims to create a standardized design language that can be used by developers, designers, and product managers. UDL defines design tokens, data sources and interfaces for stateful designs via standardized structures and conventions.
 
 ## Introduction:
-Stateful designs are complex and require a standardized approach to ensure consistency across different UI frameworks and OS UI engines. UDL provides a set of design tokens, data sources and interfaces that can be used to create stateful designs. These design tokens are defined in a standardized format that can be used by developers, designers, and product managers.
+Stateful designs are complex and require a standardized approach to ensure consistency across different UI frameworks and OS Native UI engines. UDL provides a set of design tokens, data sources and interfaces that can be used to create stateful designs. These design tokens are defined in a standardized format that can be used by developers, designers, and product managers.
 
-Design Tokens here refers to nomenclature of components, colors, typography, spacing, models and data contracts. these tokens can be used to generate code for UI components, stylesheets, and other design artifacts via udl-gen without any additional rewriting code manually including dynamic(Stateful) components.
+Design Tokens here refers to nomenclature of components, colors, typography, spacing, models and data contracts. These tokens can be used to generate code for UI components, stylesheets, and other design artifacts via udl-gen without any additional rewriting code manually including dynamic(Stateful) components.
 
 ## Current State of Project:
 In the process of defining and implementing class and enum definitions of udl data.
@@ -21,8 +21,35 @@ In the process of defining and implementing class and enum definitions of udl da
  - [ ] Implement interfaces for stateful designs
  - [ ] Implement Mock Implementation for design token data
  - [ ] Define design tokens names for components, colors, typography, spacing, models and data contracts.
+ 
+## Basic Example:
+```yaml
+models:
+  - id: ApiError
+    description: "Standard error response"
+    properties:
+      code: string
+      message: string?
+      timestamp: datetime
+```
 
-Example:
+### Generated Dart Code:
+```dart
+/// Standard error response
+class ApiError {
+  final String code;
+  final String? message;
+  final DateTime timestamp;
+
+  const ApiError({
+    required this.code,
+    this.message,
+    required this.timestamp,
+  });
+}
+```
+
+## More Complete Example:
 ```yaml
 udl_version: 0.0.1
 
@@ -104,7 +131,7 @@ models:
       login_status: $enum::LoginStatus
 ```
 
-Generated code via udl-gen(Dart)
+### Generated code via udl-gen(Dart)
 
 ```dart
 import 'package:result_dart/result_dart.dart';
