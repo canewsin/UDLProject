@@ -4,6 +4,15 @@
 
 The Unified Design Language (UDL) project aims to create a standardized design language that can be used by developers, designers, and product managers. UDL defines design tokens, data sources and interfaces for stateful designs via standardized structures and conventions.
 
+## Table of Contents
+- [Introduction](#introduction)
+- [Current State of Project](#current-state-of-project)
+- [Expected Final State](#expected-final-state)
+- [Language Support](#language-support)
+- [TODO](#todo)
+- [Basic Example](#basic-example)
+- [More Complete Example](#more-complete-example)
+
 ## Introduction:
 Stateful designs are complex and require a standardized approach to ensure consistency across different UI frameworks and OS Native UI engines. UDL provides a set of design tokens, data sources and interfaces that can be used to create stateful designs. These design tokens are defined in a standardized format that can be used by developers, designers, and product managers.
 
