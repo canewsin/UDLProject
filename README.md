@@ -49,6 +49,16 @@ class ApiError {
 }
 ```
 
+### Generated Rust Code:
+```rust
+/// Standard error response
+pub struct ApiError {
+    pub code: String,
+    pub message: Option<String>,
+    pub timestamp: DateTime,
+}
+```
+
 ## More Complete Example:
 ```yaml
 udl_version: 0.0.1
