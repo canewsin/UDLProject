@@ -28,7 +28,7 @@ In the process of defining and implementing class and enum definitions of udl da
 In a product development environment, product managers create product documents, goals, references and examples of final products. UI designers gives a shape to the product, developers then implement the design via code. Their implementations looped back to product managers for feedback and iteration. At each stage, each has their own non standardized way with manual implementations that consumes unnecessary time and resources. Let's say UI designer designs a Page in Figma, developers implement the design via code, and product managers provide feedback and iterate on the design. This process continues until the product is complete. Developers redo same process UI designers already did in the previous stage, this repeats until the product is complete. Sometimes this process becomes complicated when dealing with different device platforms and UI frameworks.
 
 ### What UDL Aimed to Solve
-With UDL, UI Designers/Developers define a structure of tokens that can be used to generate code for UI components, stylesheets, and other design artifacts via udl-gen without rewriting code manually including dynamic(Stateful) components.
+With UDL(See [Reference File](https://github.com/UDLProject/UDLProject/blob/main/examples/udl-example.udl.yaml)), UI Designers/Developers define a structure of tokens that can be used to generate code for UI components, stylesheets, and other design artifacts via udl-gen without rewriting code manually including dynamic(Stateful) components.
 
 ## Language Support:
 - [x] Dart/Flutter
